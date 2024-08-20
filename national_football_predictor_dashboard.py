@@ -24,7 +24,7 @@ st.write(f"""<div style="text-align: center;"><h1 style="text-align: center;">Pr
 
 @st.cache_data
 def load_data():
-    data_path = "data/results.csv"
+    data_path = "data/modified_results.csv"
 
     df_results = pd.read_csv(data_path) 
 
@@ -32,7 +32,6 @@ def load_data():
         df_results["date"] = pd.to_datetime(df_results["Date"]).dt.date
 
     return df_results  # a Pandas DataFrame
-
 
 df_results = load_data()
 
