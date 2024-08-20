@@ -35,9 +35,13 @@ def load_data():
 
 df_results = load_data()
 
+# Displaying the dataset in a expandable table
+with st.expander("Check the complete dataset:"):
+    st.dataframe(df_results)
+
 unique_team_list = df_results["team"].unique()
 
-
+"""
 # ----- Select the team -----
 if unique_team_list is not None:
     # Getting the list of teams to compare from the user
@@ -103,12 +107,12 @@ def ml_simulate_match(input_data):
 match_data = create_match(team1,team2)
 result = ml_simulate_match(match_data)
 
-result_text = f"""
-    ### {team1} {result[0][0]} :  {team2} {result[0][1]}
-    *Form Advantage: {match_data["rolling_points_diff"][0]}*
-    *Current Efficience Advantage: {match_data["rolling_score_diff"][0]}*
-    *Quality Advantage: {match_data["elo_diff"][0]}*
+#result_text = f"""
+#    ### {team1} {result[0][0]} :  {team2} {result[0][1]}
+#    *Form Advantage: {match_data["rolling_points_diff"][0]}*
+#    *Current Efficience Advantage: {match_data["rolling_score_diff"][0]}*
+#    *Quality Advantage: {match_data["elo_diff"][0]}*
     """
 
-st.write(result_text)
-
+#st.write(result_text)
+"""
