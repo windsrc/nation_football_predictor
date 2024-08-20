@@ -29,7 +29,7 @@ def load_data():
     df_results = pd.read_csv(data_path) 
 
     if df_results is not None:
-        df_results["date"] = pd.to_datetime(df_results["Date"]).dt.date
+        df_results["date"] = pd.to_datetime(df_results["date"]).dt.date
 
     return df_results  # a Pandas DataFrame
 
