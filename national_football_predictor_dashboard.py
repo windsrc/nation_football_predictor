@@ -11,7 +11,6 @@ st.set_page_config(
 
 # ----- Left menu -----
 with st.sidebar:
-    st.image("eae_img.png", width=200)
     st.header("National Football Team Prediction Tool")
     st.write("###")
     st.write("**Author:** Christopher Windsor (https://github.com/windsrc)")
