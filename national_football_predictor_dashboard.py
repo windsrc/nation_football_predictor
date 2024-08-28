@@ -1,6 +1,6 @@
 import streamlit as st
-import base64
 import pandas as pd
+import pickle
 
     
 # ----- Page configs (tab title, favicon) -----
@@ -14,14 +14,14 @@ st.set_page_config(
 with st.sidebar:
     st.header("National Football Team Prediction Tool")
     st.write("###")
-    st.write("**Author:** Christopher Windsor (https://github.com/windsrc)")
+    st.write("**Author:** [Christopher Windsor](https://github.com/windsrc)")
 
 
 # ----- Top title -----
 st.write(f"""<div style="text-align: center;"><h1 style="text-align: center;">Predict a match!</h1></div>""", unsafe_allow_html=True)
 
-# ----- Loading the dataset -----
 
+# ----- Loading the dataset -----
 @st.cache_data
 def load_data():
     data_path = "data/modified_results.csv"
@@ -37,8 +37,8 @@ with st.expander("Check the complete dataset:"):
     st.dataframe(df_results)
 
 unique_team_list = df_results["team"].unique()
+selected_teams = None
 
-"""
 # ----- Select the team -----
 if unique_team_list is not None:
     # Getting the list of teams to compare from the user
@@ -46,70 +46,87 @@ if unique_team_list is not None:
 else:
     st.subheader("⚠️ Currently unavailable!")
 
-team1 = selected_teams[0]
-team2 = selected_teams[1]
+if len(selected_teams) < 2:
+    st.write("Select 2 teams!")
+else:
+    team1 = selected_teams[0]
+    team2 = selected_teams[1]
+    
 
 
-# ----- Make calculations -----
 
-# Load the prediction model
-with open('model/trained_multi_output_model.pkl', 'rb') as file:
-    trained_multi_output_model = pickle.load(file)
+    # ----- Make calculations -----
 
-# Get the latest team data
-def get_latest_team_data(team_name):
-        # Combine filtering and getting the last record into one step
-        team_data = df_results[(df_results["team"] == team_name) | (df_results["opponent"] == team_name)].iloc[-1]
+    # Load the prediction model
+    with open('model/trained_multi_output_model.pkl', 'rb') as file:
+        trained_multi_output_model = pickle.load(file)
 
-        if team_data["team"] == team_name:
-            rolling_points = team_data["rolling_points"]
-            rolling_net_score = team_data["rolling_net_score"]
-            elo_rating = team_data["team_elo_rating"]
+    # Get the latest team data
+    def get_latest_team_data(team_name):
+            # Combine filtering and getting the last record into one step
+            team_data = df_results[(df_results["team"] == team_name) | (df_results["opponent"] == team_name)].iloc[-1]
+
+            if team_data["team"] == team_name:
+                rolling_points = team_data["rolling_points"]
+                rolling_net_score = team_data["rolling_net_score"]
+                elo_rating = team_data["team_elo_rating"]
+                
+            else:
+                rolling_points = team_data["opponent_rolling_points"]
+                rolling_net_score = team_data["opponent_rolling_net_score"]
+                elo_rating = team_data["opponent_elo_rating"]
             
-        else:
-            rolling_points = team_data["opponent_rolling_points"]
-            rolling_net_score = team_data["opponent_rolling_net_score"]
-            elo_rating = team_data["opponent_elo_rating"]
+            return rolling_points, rolling_net_score, elo_rating
+
+    # Merge the data
+    def create_match(team1,team2):
+        # Get the latest data for both teams
+        team1_rolling_points, team1_rolling_net_score, team1_elo_rating = get_latest_team_data(team1)
+        team2_rolling_points, team2_rolling_net_score, team2_elo_rating = get_latest_team_data(team2)
+
+        rolling_points_diff = team1_rolling_points - team2_rolling_points
+        rolling_net_score_diff = team1_rolling_net_score - team2_rolling_net_score
+        elo_rating_diff = team1_elo_rating - team2_elo_rating
+
+        input_data = pd.DataFrame([[team1_rolling_points, team1_rolling_net_score, team1_elo_rating, 
+                                    team2_rolling_points, team2_rolling_net_score, team2_elo_rating,rolling_points_diff,rolling_net_score_diff,elo_rating_diff]],
+                                    columns=['rolling_points', 'rolling_net_score', 'team_elo_rating', 'opponent_rolling_points', 'opponent_rolling_net_score',
+                                    'opponent_elo_rating', 'rolling_points_diff', 'rolling_score_diff', 'elo_diff'], dtype='object')
         
-        return rolling_points, rolling_net_score, elo_rating
+        return input_data
 
-# Merge the data
-def create_match(team1,team2):
-     # Get the latest data for both teams
-    team1_rolling_points, team1_rolling_net_score, team1_elo_rating = get_latest_team_data(team1)
-    team2_rolling_points, team2_rolling_net_score, team2_elo_rating = get_latest_team_data(team2)
+    # Simulate the match
+    def ml_simulate_match(input_data):
+        # Predict the match outcome
+        prediction = trained_multi_output_model.predict(input_data)
+        
+        # Convert predictions to integers
+        prediction_round = prediction.round().astype(int)
 
-    rolling_points_diff = team1_rolling_points - team2_rolling_points
-    rolling_net_score_diff = team1_rolling_net_score - team2_rolling_net_score
-    elo_rating_diff = team1_elo_rating - team2_elo_rating
+        return prediction_round
 
-    input_data = pd.DataFrame([[team1_rolling_points, team1_rolling_net_score, team1_elo_rating, 
-                                team2_rolling_points, team2_rolling_net_score, team2_elo_rating,rolling_points_diff,rolling_net_score_diff,elo_rating_diff]],
-                              columns=input.columns)
+
+    # ----- Select the team -----
+    match_data = create_match(team1,team2)
+    result = ml_simulate_match(match_data)
     
-    return input_data
+    st.write("###")
 
-# Simulate the match
-def ml_simulate_match(input_data):
-    # Predict the match outcome
-    prediction = trained_multi_output_model.predict(input_data)
-    
-    # Convert predictions to integers
-    prediction_round = prediction.round().astype(int)
+    st.write(f"""<div style="text-align: center;"><h2 style="text-align: center;">{team1} {result[0][0]} :  {team2} {result[0][1]}</h1></div>""", unsafe_allow_html=True)
 
-    return prediction_round
+    st.write("###")
+    col_matchinfo = st.columns([3, 3, 3])
+
+    form_adv = match_data["rolling_points_diff"][0]
+    curr_eff_adv = match_data["rolling_score_diff"][0]
+    qual_adv = int(match_data["elo_diff"][0])
 
 
-# ----- Select the team -----
-match_data = create_match(team1,team2)
-result = ml_simulate_match(match_data)
+    col_matchinfo[0].write(f"### {form_adv}")
+    col_matchinfo[0].write("*Form Advantage*")
+    col_matchinfo[1].write(f"### {curr_eff_adv}")
+    col_matchinfo[1].write("*Current Efficience Advantage*")
+    col_matchinfo[2].write(f"### {qual_adv}")
+    col_matchinfo[2].write("*Quality Advantage*")
 
-#result_text = f"""
-#    ### {team1} {result[0][0]} :  {team2} {result[0][1]}
-#    *Form Advantage: {match_data["rolling_points_diff"][0]}*
-#    *Current Efficience Advantage: {match_data["rolling_score_diff"][0]}*
-#    *Quality Advantage: {match_data["elo_diff"][0]}*
-    """
 
-#st.write(result_text)
-"""
