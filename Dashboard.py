@@ -1,6 +1,7 @@
 import streamlit as st
 import pandas as pd
 import pickle
+import numpy as np
 
     
 # ----- Page configs (tab title, favicon) -----
@@ -33,8 +34,8 @@ def load_data():
 df_results = load_data()
 
 # Displaying the dataset in a expandable table
-with st.expander("Check the complete dataset:"):
-    st.dataframe(df_results)
+#with st.expander("Check the complete dataset:"):
+#    st.dataframe(df_results)
 
 unique_team_list = df_results["team"].unique()
 selected_teams = None
@@ -104,29 +105,68 @@ else:
         prediction_round = prediction.round().astype(int)
 
         return prediction_round
+    
+    # Define the sigmoid function
+    def sigmoid(x, L ,x0, k, b):
+        y = L / (1 + np.exp(-k*(x-x0))) + b
+        return y
 
+    # Simulate the probablities regarding the distribution of the score differences
+    def get_points_probabilities(new_data):
+        win_predictions_points_diff = sigmoid(new_data, 1.0219911767395384, 3.0710125946286957, 0.17133835987111373, -0.012618327547552427)
+        loss_predictions_points_diff = sigmoid(new_data, -1.0173076171750144, -4.1949160596867605, 0.1724123095353443, 1.0073651064741669)
+        tie_predictions_points_diff = 1-(win_predictions_points_diff+loss_predictions_points_diff)
+        return [win_predictions_points_diff.item(),tie_predictions_points_diff.item(),loss_predictions_points_diff.item()]
+    
+    def get_score_probabilities(new_data):
+        win_predictions_score_diff = sigmoid(new_data, 0.9292197251654829, 5.497483580698807, 0.09485697620314182, 0.025633267508348358)
+        loss_predictions_score_diff = sigmoid(new_data, -0.8833313927905777, -6.37494123582646, 0.10220264014360983, 0.908659500577311)
+        tie_predictions_score_diff = 1-(win_predictions_score_diff+loss_predictions_score_diff)
+        return [win_predictions_score_diff.item(),tie_predictions_score_diff.item(),loss_predictions_score_diff.item()]
+    
+    def get_elo_probabilities(new_data):
+        win_predictions_elo_diff = sigmoid(new_data, 0.963690164672331, 47.89567169440476, 0.005767877565037683, -0.021828821104679156)
+        loss_predictions_elo_diff = sigmoid(new_data, -0.9412743294711561, -89.91127923351979, 0.0059683018353539515, 0.9341988086163746)
+        tie_predictions_elo_diff = 1-(win_predictions_elo_diff+loss_predictions_elo_diff)
+        return [win_predictions_elo_diff.item(),tie_predictions_elo_diff.item(),loss_predictions_elo_diff.item()]
+    
 
     # ----- Select the team -----
     match_data = create_match(team1,team2)
     result = ml_simulate_match(match_data)
-    
-    st.write("###")
-
-    st.write(f"""<div style="text-align: center;"><h2 style="text-align: center;">{team1} {result[0][0]} :  {team2} {result[0][1]}</h1></div>""", unsafe_allow_html=True)
-
-    st.write("###")
-    col_matchinfo = st.columns([3, 3, 3])
 
     form_adv = match_data["rolling_points_diff"][0]
+    form_adv_probs = get_points_probabilities(form_adv)
     curr_eff_adv = match_data["rolling_score_diff"][0]
+    curr_eff_adv_probs = get_score_probabilities(curr_eff_adv)
     qual_adv = int(match_data["elo_diff"][0])
+    qual_adv_probs = get_elo_probabilities(qual_adv)
+
+    quotes = [(form_adv_probs[0]*0.25)+(curr_eff_adv_probs[0]*0.25)+(qual_adv_probs[0]*0.5),(form_adv_probs[1]*0.25)+(curr_eff_adv_probs[1]*0.25)+(qual_adv_probs[1]*0.5),(form_adv_probs[2]*0.25)+(curr_eff_adv_probs[2]*0.25)+(qual_adv_probs[2]*0.5)]
+    
+    st.write("###")
+    st.write(f"""<div style="text-align: center;"><h2 style="text-align: center;">{team1} {result[0][0]} :  {team2} {result[0][1]}</h1></div>""", unsafe_allow_html=True)
+    st.write(f"""<div style="text-align: center;"><p style="text-align: center;">AI Prediction</p></div>""", unsafe_allow_html=True)
+
+    st.write("###")
+    st.write(f"""<div style="text-align: center;"><h3 style="text-align: center;"> 1: {round(1/quotes[0],2)} | X: {round(1/quotes[1],2)} | 2: {round(1/quotes[2],2)}  </h1></div>""", unsafe_allow_html=True)
+    st.write(f"""<div style="text-align: center;"><p style="text-align: center;">Fair Quotes</p></div>""", unsafe_allow_html=True)
+    st.write("###")
+    
+    col_matchinfo = st.columns([3, 3, 3])
 
 
+
+    col_matchinfo[0].write("*Current Form Advantage*")
     col_matchinfo[0].write(f"### {form_adv}")
-    col_matchinfo[0].write("*Form Advantage*")
-    col_matchinfo[1].write(f"### {curr_eff_adv}")
+    col_matchinfo[0].write(f"1: {round((form_adv_probs[0])*100,2)}% | X: {round((form_adv_probs[1])*100,2)}% | 2: {round((form_adv_probs[2])*100,2)}%")
     col_matchinfo[1].write("*Current Efficience Advantage*")
-    col_matchinfo[2].write(f"### {qual_adv}")
+    col_matchinfo[1].write(f"### {curr_eff_adv}")
+    col_matchinfo[1].write(f"1: {round((curr_eff_adv_probs[0])*100,2)}% | X: {round((curr_eff_adv_probs[1])*100,2)}% | 2: {round((curr_eff_adv_probs[2])*100,2)}%")
     col_matchinfo[2].write("*Quality Advantage*")
+    col_matchinfo[2].write(f"### {qual_adv}")
+    col_matchinfo[2].write(f"1: {round((qual_adv_probs[0])*100,2)}% | X: {round((qual_adv_probs[1])*100,2)}% | 2: {round((qual_adv_probs[2])*100,2)}%")
 
+    
 
+# streamlit run Dashboard.py
