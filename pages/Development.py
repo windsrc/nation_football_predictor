@@ -1,4 +1,10 @@
 import streamlit as st
+
+st.set_page_config(
+    page_title="National Football Predictor",
+    page_icon="⚽️",
+)
+
 # Title of the application
 st.title("Development of a National Football Predictor")
 
