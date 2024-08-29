@@ -13,6 +13,7 @@ st.set_page_config(
 
 # ----- Left menu -----
 with st.sidebar:
+    st.image("nationalfootballpredictor_header.jpg", width=200)
     st.header("National Football Team Prediction Tool")
     st.write("###")
     st.write("Interactive project for the EURO 2024 that uses a machine learning model to predict football match outcomes. Users can select two teams to compare, and the app calculates and displays the likelihood of a win, tie, or loss based on historical performance data. The tool generates fair betting odds and visualizes predictions, providing an engaging way to explore match forecasts and betting insights.")
