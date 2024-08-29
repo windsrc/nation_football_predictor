@@ -151,7 +151,7 @@ else:
 
     st.write("###")
     st.write(f"""<div style="text-align: center;"><h3 style="text-align: center;"> 1: {round(1/quotes[0],2)} | X: {round(1/quotes[1],2)} | 2: {round(1/quotes[2],2)}  </h1></div>""", unsafe_allow_html=True)
-    st.write(f"""<div style="text-align: center;"><p style="text-align: center;">Fair Quotes</p></div>""", unsafe_allow_html=True)
+    st.write(f"""<div style="text-align: center;"><p style="text-align: center;">Fair Odds</p></div>""", unsafe_allow_html=True)
     st.write("###")
     
     col_matchinfo = st.columns([3, 3, 3])
