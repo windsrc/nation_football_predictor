@@ -1,5 +1,6 @@
+import streamlit as st
 # Title of the application
-st.title("Development of a Multi-Output Predictive Model for Football Match Outcomes")
+st.title("Development of a National Football Predictor")
 
 # Abstract section
 st.header("Abstract")
@@ -55,6 +56,7 @@ st.write(
     """
 )
 
+
 # Elo Rating Calculation section
 st.header("5. Elo Rating Calculation")
 st.write(
@@ -64,6 +66,19 @@ st.write(
     - **Elo Integration:** These Elo ratings were integrated into the main DataFrame, allowing for comparison across matches.
     """
 )
+st.markdown(
+        """
+        ```latex
+        # Calculate expected scores
+        expected_team1 = 1 / (1 + 10 ** ((elo_team2 - elo_team1) / 600))
+        expected_team2 = 1 / (1 + 10 ** ((elo_team1 - elo_team2) / 600))
+
+        # Update Elo ratings
+        new_elo_team1 = elo_team1 + k * (team1_result - expected_team1)
+        new_elo_team2 = elo_team2 + k * (team2_result - expected_team2)
+        ```
+        """
+    )
 
 # Feature Engineering section
 st.header("6. Feature Engineering")
@@ -84,6 +99,16 @@ st.write(
         the relationship between the features and match outcomes.
     """
 )
+st.image("chart_point_diff.png", width=700)
+st.write("*Chart: Rolling Points Difference of the last 10 matches with probabilites*")
+st.write("###")
+st.image("chart_score_diff.png", width=700)
+st.write("*Chart: Rolling Score Difference of the last 10 matches with probabilites*")
+st.write("###")
+st.image("chart_elo_diff.png", width=700)
+st.write("*Chart: ELO Score Difference with probabilites*")
+st.write("###")
+
 
 # Sigmoid Curve Fitting section
 st.header("8. Sigmoid Curve Fitting")
@@ -94,6 +119,8 @@ st.write(
     - **Curve Fitting:** The sigmoid curves were fitted to the aggregated data, enabling predictions based on these features.
     """
 )
+st.image("sigmoid_curve.png", width=700)
+st.write("*Chart: Fitted Sigmoid Curve for prediciting probabilities (Rolling Score Difference - Wins)*")
 
 # Probability Prediction section
 st.header("9. Probability Prediction")
