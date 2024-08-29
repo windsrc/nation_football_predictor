@@ -70,8 +70,5 @@ The `Dashboard.py` script utilizes Streamlit components to create the interactiv
 
 * The visualizations for predicted score distributions (using Matplotlib or Seaborn) are currently commented out in the code. You can uncomment them and install the respective libraries if you want to include these visualizations.
 
-**Additional Information**
-
-The pre-trained model used in this app is not included in this repository due to potential size and licensing restrictions. You will need to train your own model or obtain a suitable pre-trained model for football match prediction.
 
 This README provides a comprehensive overview of the National Football Team Prediction Tool and its functionalities. Feel free to explore the code and customize it further to fit your specific needs.
